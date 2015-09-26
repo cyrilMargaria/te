@@ -63,6 +63,99 @@ module ietf-te-topology {
    * Typedefs
    */
 
+typedef te-recovery-status {
+    type enumeration {
+      enum normal {
+        description
+          "Both the recovery and working spans are fully
+          allocated and active, data traffic is being
+          transported over (or selected from) the working
+          span, and no trigger events are reported.";
+      }
+      enum recovery-started {
+        description
+          "The recovery action has been started, but not completed.";
+      }
+      enum recovery-succeeded {
+        description
+          "The recovery action has succeeded. The working span has
+          reported a failure/degrade condition and the user traffic
+          is being transported (or selected) on the recovery span.";
+      }
+      enum recovery-failed {
+        description
+          "The recovery action has failed.";
+      }
+      enum reversion-started {
+        description
+          "The reversion has started.";
+      }
+      enum reversion-failed {
+        description
+          "The reversion has failed.";
+      }
+      enum recovery-unavailable {
+        description
+          "The recovery is unavailable -- either as a result of an
+          operator Lockout command or a failure condition detected
+          on the recovery span.";
+      }
+      enum recovery-admin {
+        description
+          "The operator has issued a command switching the user
+          traffic to the recovery span.";
+      }
+      enum wait-to-restore {
+        description
+          "The recovery domain is recovering from a failuer/degrade
+          condition on the working span that is being controlled by
+          the Wait-to-Restore (WTR) timer.";
+      }
+      enum primary-active {
+        description
+          "Primary is active.";
+      }
+    }
+    description
+      "Defines the status of a recovery action.";
+    reference
+      "RFC4427: Recovery (Protection and Restoration) Terminology
+      for Generalized Multi-Protocol Label Switching (GMPLS).
+      RFC6378: MPLS Transport Profile (MPLS-TP) Linear Protection";
+  }
+  typedef te-admin-status {
+    type enumeration {
+      enum up {
+        description
+          "Enabled.";
+      }
+      enum down {
+        description
+          "Disabled.";
+      }
+      enum testing {
+        description
+          "In some test mode.";
+      }
+      enum preparing-maintenance {
+        description
+          "Resource is disabled in the control plane to prepare for
+          graceful shutdown for maintenance purposes.";
+        reference
+          "RFC5817: Graceful Shutdown in MPLS and Generalized MPLS
+          Traffic Engineering Networks";
+      }
+      enum maintenance {
+        description
+          "Resource is disabled in the data plane for maintenance
+          purposes.";
+      }
+    }
+    description
+      "Defines a type representing the administrative status of 
+      a TE resource.";
+  }
+
   typedef te-global-id {
     type uint32;
     description
@@ -487,7 +580,11 @@ module ietf-te-topology {
             "A reference to a te-topology-id.";
         }
       }
-
+      leaf admin-status {
+        type te-admin-status;
+        description
+          "The administrative state of the link.";
+      }
       list connectivity-matrix {
         key "id";
         description
@@ -699,6 +796,21 @@ module ietf-te-topology {
       description
         "Destination TE link of the underlay trail.";
     }
+    container recovery {
+	description
+          "Status of the recovery process.";
+        leaf restoration-status {
+          type te-recovery-status;
+          description
+            "Restoration status.";
+        }
+        leaf protection-status {
+          type te-recovery-status;
+          description
+            "Protection status.";
+        }      
+      }
+
   } // te-link-underlay-attributes
 
   grouping te-link-state-underlay-attributes {
@@ -1130,27 +1242,10 @@ module ietf-te-topology {
         uses te-link-underlay-attributes;
       } // underlay
       leaf admin-status {
-        type enumeration {
-          enum up {
-            value 1;
-            description
-            "Enabled.";
-          }
-          enum down {
-            value 2;
-            description
-            "Disabled.";
-          }
-          enum testing {
-            value 3;
-            description
-            "In some test mode.";
-          }
-        }
+        type te-admin-status;
         description
-          "The desired state of the link.";
+          "The administrative state of the link.";
       }
-      
       uses performance-metric-throttle-container;
       uses te-link-info-attributes;
     }
@@ -1194,7 +1289,21 @@ module ietf-te-topology {
           "A list of information sources learned but not used.";
         uses information-source-attributes;
         uses te-link-info-attributes;
-      }            
+      }
+      container recovery {
+        description
+          "Status of the recovery process.";
+        leaf restoration-status {
+          type te-recovery-status;
+          description
+            "Restoration status.";
+        }
+        leaf protection-status {
+          type te-recovery-status;
+          description
+            "Protection status.";
+        }      
+      }
     }
   } // te-link-state-attributes
 
